@@ -1,12 +1,16 @@
 import unittest
-import parent_elements as pe
+import pickle
+import functions.function_factory as ff
 
-class TestParentElementSearch(unittest.TestCase):
-    'Tests Search for parent element'
-    feature = {}
-    endpoints = [{(1,0):['GUID1'], }
-    def test_search(self):
-        self.assertIsNone(pe.search_end_points(feature, end_points))
+with open('tests/examples/example_elements.p', 'rb') as f:
+        FEATURES = pickle.load(f)
+
+[ff.make_basic_feature(feature) for _, feature in FEATURES.items()]
+
+class BasicFeature(unittest.TestCase):
+
+    def test_basic_process(self):
+        self.assertTrue(EXAMPLES is dict)
 
 if __name__ == '__main__':
     unittest.main()

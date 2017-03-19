@@ -1,3 +1,4 @@
+'''Generates a dict of example elements (one from each layer in the GDB)'''
 import pickle
 import fiona
 
