@@ -2,26 +2,37 @@
 
 from collections import OrderedDict
 from functools import reduce
+from general import *
 import fiona
 
-def make_init(G)
+def make_init(gdb, layer, kwds):
+    '''Makes the init dict for detail lookup if needed.
+    If details are needed, a function is passed.
+    The details are used to init the feature processing.
+    Assumes a different layer specified in function.'''
+    try:
+        f_init = kwds['init']
+        details = f_init(gdb)
+        print(details)
+    except:
+        details = None
+    return {**kwds, 'details': details}
 
-def make_layer(gdb, layer, *, kwds):
+def make_layer(gdb, layer, kwds):
     'Function calls make element on all elements in a layer'
     functions = make_function_stack(kwds)
-    return [make_element(element, functions, kwds)
+    layer_kwds = make_init(gdb, layer, kwds)
+    return [make_element(element, functions, layer_kwds)
             for element in fiona.open(gdb, layer=layer)]
 
 def make_element(element, functions, kwds):
-
+    details = kwds.pop('details', None)
+    init = {'details':details} if details else {}
     return reduce(lambda prev, func: func(element, prev, kwds),
-                  [function for _, function in functions.items()], {})
+                  [function for _, function in functions.items()], init)
 
 def get_material(raw, init, kwds):
-    try:
-        return {'material': init[int(raw['id'])]}
-    except:
-        return {'material': None}
+    return init
 
 def make_function_stack(kwds):
     '''Constructs function stack as ordered dict'''

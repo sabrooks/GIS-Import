@@ -1,3 +1,5 @@
+SECTION_PHASE = {1:'C', 2:'B', 3:'BC', 4:'A', 5:'AC', 6:'AB', 7:'ABC'}
+
 def get_coordinates(raw, out, kwds):
     "Appends coordinates to output dict"
     geo = raw['geometry']
@@ -30,9 +32,3 @@ def get_spread_phases(raw, out, kwds):
         return {**out, **phasing}
     except:
         return out
-
-def make_layer(gdb, layer, *, kwds):
-    'Function calls make element on all elements in a layer'
-    functions = make_function_stack(kwds)
-    return [make_element(element, functions, kwds)
-            for element in fiona.open(gdb, layer=layer)]
