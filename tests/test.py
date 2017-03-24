@@ -10,7 +10,7 @@ with open('tests/examples/example_elements.p', 'rb') as f:
 class BasicFeature(unittest.TestCase):
 
     def test_basic_process(self):
-        self.assertTrue(EXAMPLES is dict)
+        self.assertTrue(FEATURES is dict)
 
 if __name__ == '__main__':
     unittest.main()
