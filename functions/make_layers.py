@@ -6,8 +6,9 @@ import fiona
 
 
 GDB = 'GDB/Export_Feb01.gdb'
-LAYERS = {**CONDUCTOR, **POINTS}
-FIRST = [make_layer(GDB, layer, kwds=kwargs) for layer, kwargs in LAYERS.items()]
+LAYERS = {**CONDUCTOR}
+INIT = ((layer, make_init(GDB, **kwargs)) for layer, kwargs in LAYERS.items())
+FIRST = [make_layer(GDB, layer, kwds=kwargs) for layer, kwargs in INIT]
 # Second pass looks up parent element
 
 for layer_result in FIRST:

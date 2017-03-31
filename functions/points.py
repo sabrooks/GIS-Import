@@ -12,24 +12,13 @@ def point_init(gdb, layer, pkey, prop):
         looked = (point_lookup(detail) for detail in fiona.open(gdb, layer=layer))
         return {key: value for key, value in looked if key and value}
 
-def active_meter(raw, out, kwds):
-    if raw['properties']['Status'] == 'A':
-        return {**out, 'F23':1}
-    else:
-        return out
 
-def fuse_phase(raw, out, kwds):
-    tag = raw['properties']['Tag']
-    out['UserTag'] = tag
-    phasing = {cell: str(tag) +  ' ' + FUSE[raw['properties']['SubtypeCD']]
-               for phase, cell in zip(['A', 'B', 'C'], ['F9', 'F10', 'F11'])
-               if phase in out['SectionPhaseConfig']}
-    return {**out, **phasing}
+
 
 
 def xfmr_phase(raw, out, kwds):
     phasing = out['SectionPhaseConfig']
-    tag = out['details'][raw['id']]
+    tag = out['details'][int(raw['id'])]
     tx_type = TRANSFORMER_LABELS[raw['properties']['SubtypeCD']]
     phasing = {cell: str(tag) +  'KVA' + tx_type
                for phase, cell in zip(['A', 'B', 'C'], ['F9', 'F10', 'F11'])
@@ -49,8 +38,7 @@ FACILITYID = {'section_name':
               lambda raw, out, kwds:
               {**out, 'section_name': kwds['prefix'] + str(raw['properties']['FacilityID'])}}
 
-LIGHT_FUNCS = {'F234':lambda raw, out, kwds:
-                      {**out, 'F23':1, 'F24':8}}
+
 
 XFMR_FUNCS = {'xfmr_phase': xfmr_phase}
 
@@ -60,23 +48,13 @@ FUSES = {'F17': lambda raw, out, kwds: {**out, 'F17':0},
          'phase_spread': fuse_phase}
 
 FUSE = {'Fuse':{'prefix':'FUS_', 'section_type':10, 'funcs': POINT_FUNCS}}
-SERVICEPOINT = {'ServicePoint':{'prefix':'', 'section_type':13,
-                'funcs': {**POINT_FUNCS, **METER_FUNCS}}}
+
 TRANSFORMER = {'Transformer':
                {'prefix': 'XFMR_', 'section_type': 5,
-                'funcs': {**POINT_FUNCS, **XFMR_FUNCS}},
-                'init': lambda gdb: point_init(gdb, 'TRANSFORMERUNIT', 'TransformerObjectID',
-                                               prop=lambda x: x['properties']['RatedKVA']) }
-STREETLIGHT = {'Streetlight':{'prefix': 'L', 'section_type':13,
-                              'funcs': {**POINT_FUNCS, **LIGHT_FUNCS}}}
-SWITCH = {'Switch':{'prefix': 'SW_', 'section_type': 6, 'funcs': POINT_FUNCS}}
-VOLTAGE_REGULATOR = {'VoltageRegulator':{'prefix': 'REG_', 'section_type': 4, 'funcs': POINT_FUNCS}}
-ELECTRIC_STATION = {'ElectricStation':{'prefix': '', 'section_type':9, 'funcs': POINT_FUNCS}}
-DYNAMIC_PROTECTION_DEVICE = {'DynamicProtectiveDevice':
-                             {'prefix': 'REC_', 'section_type':10, 'funcs': POINT_FUNCS}}
-PF_CORRECTING_EQUIPMENT = {'PFCorrectingEquipment':
-                           {'prefix': 'CAP_', 'section_type':2, 'funcs': POINT_FUNCS}}
+                'funcs': {**POINT_FUNCS, **XFMR_FUNCS},
+                'init': lambda gdb: {element['properties']['TransformerObjectID']: element['properties']['RatedKVA']
+                          for element in fiona.open(gdb, layer='TRANSFORMERUNIT')}}}
 
-POINTS = {**FUSE, **SERVICEPOINT, **TRANSFORMER, **STREETLIGHT, **SWITCH, **VOLTAGE_REGULATOR,
-          **ELECTRIC_STATION, **DYNAMIC_PROTECTION_DEVICE, **PF_CORRECTING_EQUIPMENT}
+
+
     

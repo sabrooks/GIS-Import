@@ -5,24 +5,19 @@ from functools import reduce
 from general import *
 import fiona
 
-def make_init(gdb, layer, kwds):
+def make_init(gdb, **kwargs):
     '''Makes the init dict for detail lookup if needed.
     If details are needed, a function is passed.
     The details are used to init the feature processing.
     Assumes a different layer specified in function.'''
-    try:
-        f_init = kwds['init']
-        details = f_init(gdb)
-        print(details)
-    except:
-        details = None
-    return {**kwds, 'details': details}
+    kwargs['details'] = kwargs['init'](gdb)
+    import pdb; pdb.set_trace()
+    return kwargs
 
 def make_layer(gdb, layer, kwds):
     'Function calls make element on all elements in a layer'
     functions = make_function_stack(kwds)
-    layer_kwds = make_init(gdb, layer, kwds)
-    return [make_element(element, functions, layer_kwds)
+    return [make_element(element, functions, kwds)
             for element in fiona.open(gdb, layer=layer)]
 
 def make_element(element, functions, kwds):

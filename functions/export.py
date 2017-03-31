@@ -1,7 +1,12 @@
-def export_std(feature):
-    "Translates a "
+import csv
+
+def export_std(elements):
+    "Translates a feature into a "
     export_fields = ['SectionName', 'SectionType', 'SectionPhaseConfig', 'PriorSection',
                      'MapNumber', 'Xcoord', 'Ycoord', 'UserTag',
                      *['F' + str(num) for num in range(9, 53)]]
-    sep = ','
-    return sep.join([str(feature.get(field, '')) for field in export_fields])
+    std = [[element.get(field, None) for field in export_fields]
+           for element in elements]
+    with open('Mar17.std', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(std)
