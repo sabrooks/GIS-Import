@@ -86,8 +86,8 @@ def phasing(raw, out, kwargs):
 
 def make_element(element, layer_functions, **kwargs):
     details = kwargs.pop('details', None)
-    f_detail = kwargs.pop('f_detail', None)
-    if details and f_detail:
+    f_detail = kwargs.pop('f_detail', lambda x: int(x['id'])) # ID is default 
+    if details:
         detail = details.get(f_detail(element), None)
     elif f_detail:
         detail = f_detail(element)
@@ -123,7 +123,7 @@ METERS = {'section_name': lambda r, o, _: {**o, 'section_name':str(r['properties
           'F24': lambda r, o, k: {**o, 'F24': 0},
           'F23': lambda r, o, k: {**o, 'F23':1} if r['properties']['Status'] == 'A' else o}
 LIGHTS = {'F234':lambda r, o, k: {**o, 'F23':1, 'F24':8}}
-FUSE_TYPE = {1:'CL', 2:'EXP', 3:'UGEXP', 4:"V"}
+FUSE_TYPE = {1:'CL', 2:'EXP', 3:'UGEXP', 4:'V'}
 FUSES = {'F17': lambda r, o, k: {**o, 'F17':0},
          'UserTag': lambda r, o, k: {**o, 'UserTag': r['properties']['Tag']},
          'phasing': phasing}
@@ -178,11 +178,12 @@ STREETLIGHT = {'Streetlight':{'prefix': 'L', 'section_type':13,
                               'functions': {**POINTS, **LIGHTS}}}
 TRANSFORMER = {'Transformer':{'prefix': 'XFMR_', 'section_type': 5,
                               'functions': {**POINTS},
+                              'phase_cells':['F20', 'F21', 'F22'],
                               'init':{'table':'TRANSFORMERUNIT',
                               'f_key': lambda x: x['properties']['TransformerObjectID'],
                               'f_value': lambda x: x['properties']['RatedKVA']}}}
 FUSE = {'Fuse':{'prefix':'FUS_', 'section_type':10, 'functions': {**POINTS, **FUSES},
-                'f_detail':lambda x: str(x['properties']['Tag']) + ' ' + FUSE_TYPE.get(int(x['properties']['SubtypeCD']),''),
+                'f_detail':lambda x: str(x['properties']['Tag']) + ' ' + FUSE_TYPE.get(int(x['properties']['SubtypeCD']), ''),
                 'phasing': phasing,
                 'detail_cells':[]}}
 POOLS = ThreadPool(8)
