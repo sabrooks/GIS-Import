@@ -1,7 +1,7 @@
 import csv
 
 def export_std(elements):
-    "Translates a feature into a "
+    "Writes std elements to an std file "
     export_fields = ['SectionName', 'SectionType', 'SectionPhaseConfig', 'PriorSection',
                      'MapNumber', 'Xcoord', 'Ycoord', 'UserTag',
                      *['F' + str(num) for num in range(9, 53)]]

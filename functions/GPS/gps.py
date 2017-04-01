@@ -14,8 +14,11 @@ SWITCHNAME = UGNAME
 POLETYPE = lambda x: 'Pole' if x['properties']['Owner'] == 'PLC' else 'Foreign Structure'
 POLENAME = lambda x: 'P_' + str(x['id']) if not x['properties']['FacilityID'] else 'P_' + x['properties']['FacilityID']
 POLEASS = lambda x: str(x['properties']['Height']) + '-' + str(x['properties']['Class'])
+GPS_FIELDS = ['Name', 'Type', 'Xcoord', 'Ycoord', 'Guid']
+
 
 def make_element(element, f_type, f_name, funcs=None):
+    'Processes element for gps file'
     properties = element['properties']
     out = {}
     out['Type'] = f_type(element)
@@ -26,11 +29,9 @@ def make_element(element, f_type, f_name, funcs=None):
     return out
 
 def export_gps(element):
-    fields = ['Name', 'Type', 'Xcoord', 'Ycoord', 'Guid']
+
     return [element.get(key, None) for key in fields]
 
-def export_asm(element):
-    fields = ['Name', 'Assemby']
 
 GPS_LAYERS = {'SubMarker':{'f_type': MARKERYPE, 'f_name': MARKERNAME},
               'UndergroundStructure':{'f_type': UGTYPE, 'f_name': UGNAME},
@@ -43,7 +44,7 @@ GPS_ELEMENTS = (make_element(element=element, f_type=k['f_type'], f_name=k['f_na
                 for layer, k in GPS_LAYERS.items()
                 for element in fiona.open(GDB, layer=layer))
 
-GPS = [export_gps(element) for element in GPS_ELEMENTS]
+GPS = [[element.get(field, None) for field in GPS_FIELDS] for element in GPS_ELEMENTS]
 ASM = [[POLENAME(element), POLEASS(element), 1, None, None, None, None, None]
        for element in fiona.open(GDB, layer='SupportStructure')]
 

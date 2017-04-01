@@ -1,4 +1,4 @@
-SECTION_PHASE = {1:'C', 2:'B', 3:'BC', 4:'A', 5:'AC', 6:'AB', 7:'ABC'}
+
 
 def get_coordinates(raw, out, kwds):
     "Appends coordinates to output dict"
@@ -16,14 +16,7 @@ def get_coordinates(raw, out, kwds):
         pass
     return {**out, **coords}
 
-def get_section_phase_config(raw, out, kwds):
-    'Appends section phase config to output dict'
-    try:
-        phase = raw['properties']['PhaseDesignation']
-        section_phase_config = SECTION_PHASE[phase]
-    except:
-        section_phase_config = 'ABC'
-    return {**out, 'SectionPhaseConfig':section_phase_config}
+
 
 def get_spread_phases(raw, out, kwds):
     try:
