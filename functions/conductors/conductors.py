@@ -79,6 +79,11 @@ def conductor_configuration(conductor):
     except:
         return "HOR"
 
+def phasing(raw, out, kwargs):
+    phases = {cell: (1 if phase in out['SectionPhaseConfig'] else 2)
+              for cell, phase in zip(['F12', 'F13', 'F14'], ['A', 'B', 'C'])}
+    return {**out, **phases}
+
 def make_element(element, layer_functions, **kwargs):
     details = kwargs.pop('details', None)
     f_detail = kwargs.pop('f_detail', None)
@@ -91,7 +96,6 @@ def make_element(element, layer_functions, **kwargs):
     kwargs['detail'] = detail
     return reduce(lambda prev, func: func(element, prev, kwargs),
                   [function for _, function in layer_functions.items()], {})
-
 
 def make_layer(gdb, layer, **kwargs):
     layer_functions = make_function_stack(kwargs)
@@ -111,8 +115,7 @@ SUBS = {'section_name': lambda r, o, k: {**o, 'SectionName': r['properties']['Na
         'map_number': lambda r, o, k: {**o, 'MapNumber': None}}
 OPEN_POINTS = {'partner': lambda r, o, k: {**o, 'F11':o['section_name']}}
 RECLOSERS = {'protection': lambda r, o, k: {**o,**{cell: r['properties']['FacilityID'] for cell in ['F9', 'F10', 'F11']}},
-             'phasing': lambda r, o, k: {**o, **{cell: (1 if phase in o['SectionPhaseConfig'] else 0) for cell, phase in
-                                                 zip(['F12', 'F13', 'F14'], ['A', 'B', 'C'])}},
+             'phasing': phasing,
              'F17': lambda r, o, k: {**o, 'F17': 0}}
 CAPACITORS = {'F12-13': lambda r, o, k:{**o, 'F12':0, 'F13':0},
               'Enabled': lambda r, o, k: {**o, 'F20':r['properties']['Enabled']}}
@@ -121,7 +124,9 @@ METERS = {'section_name': lambda r, o, _: {**o, 'section_name':str(r['properties
           'F23': lambda r, o, k: {**o, 'F23':1} if r['properties']['Status'] == 'A' else o}
 LIGHTS = {'F234':lambda r, o, k: {**o, 'F23':1, 'F24':8}}
 FUSE_TYPE = {1:'CL', 2:'EXP', 3:'UGEXP', 4:"V"}
-FUSES = {'F17': lambda r, o, k: {**o, 'F17':0}}
+FUSES = {'F17': lambda r, o, k: {**o, 'F17':0},
+         'UserTag': lambda r, o, k: {**o, 'UserTag': r['properties']['Tag']},
+         'phasing': phasing}
 
 PRI_OH = {'PriOHElectricLineSegment':
           {'prefix':'OH_', 'section_type':1, 'functions':LINES,
@@ -177,7 +182,9 @@ TRANSFORMER = {'Transformer':{'prefix': 'XFMR_', 'section_type': 5,
                               'f_key': lambda x: x['properties']['TransformerObjectID'],
                               'f_value': lambda x: x['properties']['RatedKVA']}}}
 FUSE = {'Fuse':{'prefix':'FUS_', 'section_type':10, 'functions': {**POINTS, **FUSES},
-                'f_detail':lambda x: str(x['properties']['Tag']) + ' ' + FUSE_TYPE.get(x['properties']['SubtypeCD'],'')}}
+                'f_detail':lambda x: str(x['properties']['Tag']) + ' ' + FUSE_TYPE.get(int(x['properties']['SubtypeCD']),''),
+                'phasing': phasing,
+                'detail_cells':[]}}
 POOLS = ThreadPool(8)
 CONDUCTORS = {**PRI_OH, **PRI_UG, **BUSBAR, **SEC_UG, **SEC_OH, **SWITCH, **ELECTRIC_STATION,
               **OPEN_POINT, **DYNAMIC_PROTECTION_DEVICE, **PF_CORRECTING_EQUIPMENT, **VOLTAGE_REGULATOR,
