@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import csv
 from functools import reduce
 from multiprocessing.dummy import Pool as ThreadPool
@@ -145,7 +145,7 @@ RECLOSERS = {'protection': lambda r, o, k: {**o,**{cell: r['properties']['Facili
              'sub protection': sub_protection}
 CAPACITORS = {'F12-13': lambda r, o, k:{**o, 'F12':0, 'F13':0},
               'Enabled': lambda r, o, k: {**o, 'F20':r['properties']['Enabled']}}
-METERS = {'section_name': lambda r, o, _: {**o, 'section_name':str(r['properties']['AccountNumber'])},
+METERS = {'section_name': lambda r, o, _: {**o, 'SectionName':str(r['properties']['AccountNumber'])},
           'F24': lambda r, o, k: {**o, 'F24': 0},
           'F23': lambda r, o, k: {**o, 'F23':1} if r['properties']['Status'] == 'A' else o}
 LIGHTS = {'F234':lambda r, o, k: {**o, 'F23':1, 'F24':8}}
@@ -228,13 +228,41 @@ CONDUCTORS = {**PRI_OH, **PRI_UG, **BUSBAR, **SEC_UG, **SEC_OH, **SWITCH, **ELEC
 
 LAYER = POOLS.map(lambda x: make_layer(gdb=x[0], layer=x[1], **x[2]),
                   ((GDB, layer, initialize(GDB, **kwargs)) for layer, kwargs in CONDUCTORS.items()))
+
+END_POINTS = defaultdict(list)
+
+for layer in LAYER:
+    for element in layer:
+        key = (element['Xcoord'], element['Ycoord'])
+        value = {'name':element['SectionName'], 'guid': element['F50'], 'type': element['geometry']['type']}
+        END_POINTS[key].append(value)
+
+def find_endpoint(element, end_points):
+    def find_prior(element_geo, possible_priors):
+        if len(possible_priors) == 1:
+            return possible_priors[0]
+        else:
+            return [p for p in possible_priors if p['type'] != element_geo][0]
+
+    geo = element['geometry']
+    start = geo['coordinates'] if geo['type'] == 'Point' else geo['coordinates'][0][0]
+    if end_points.get(start):
+        possible = end_points.get(start)
+        parent = find_prior(geo, possible)
+        element['PriorSection'] = parent.get('name')
+        element['F51'] = parent.get('guid')
+    return element
+
+STD_ELEMENTS = POOLS.map(lambda x: find_endpoint(x, END_POINTS), (element for layer in LAYER for element in layer))
+
+
 STD_FIELDS = ['SectionName', 'SectionType', 'SectionPhaseConfig', 'PriorSection',
               'MapNumber', 'Xcoord', 'Ycoord', 'UserTag',
               *['F' + str(num) for num in range(9, 53)]]
 
 with open('STD.std', 'w') as f:
     STD = ([element.get(field, None) for field in STD_FIELDS]
-           for layer in LAYER for element in layer)
+           for element in STD_ELEMENTS)
     WRITER = csv.writer(f)
     WRITER.writerows(list(STD))
 
