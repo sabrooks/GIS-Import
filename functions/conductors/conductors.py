@@ -230,7 +230,6 @@ LAYER = POOLS.map(lambda x: make_layer(gdb=x[0], layer=x[1], **x[2]),
                   ((GDB, layer, initialize(GDB, **kwargs)) for layer, kwargs in CONDUCTORS.items()))
 
 END_POINTS = defaultdict(list)
-
 for layer in LAYER:
     for element in layer:
         key = (element['Xcoord'], element['Ycoord'])
@@ -242,7 +241,11 @@ def find_endpoint(element, end_points):
         if len(possible_priors) == 1:
             return possible_priors[0]
         else:
-            return [p for p in possible_priors if p['type'] != element_geo][0]
+            try:
+                return [p for p in possible_priors if p['type'] != element_geo['type']][0]
+            except:
+                print('check element' + element['SectionName'])
+                return possible_priors[0]
 
     geo = element['geometry']
     start = geo['coordinates'] if geo['type'] == 'Point' else geo['coordinates'][0][0]
@@ -267,3 +270,9 @@ with open('STD.std', 'w') as f:
     WRITER.writerows(list(STD))
 
 
+with open('MPT.mpt', 'w') as f:
+    MPT_ELEMENTS = (element for layer in LAYER for element in layer if element['geometry']['type'] != 'Point')
+    MPT_LINES = [[element['SectionName'], x, y, element['F50']] 
+                 for element in MPT_ELEMENTS for  i, (x,y) in enumerate(element['geometry']['coordinates'][0]) if i > 0]
+    WRITER = csv.writer(f)
+    WRITER.writerows(MPT_LINES)
