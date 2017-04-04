@@ -7,7 +7,6 @@ from multiprocessing.dummy import Pool as ThreadPool
 import fiona
 from std_layers import ELEMENTS
 
-GDB = 'GDB/Export_Feb01.gdb'
 
 def make_function_stack(kwargs):
     '''Constructs function stack as ordered dict'''
@@ -36,7 +35,7 @@ def make_function_stack(kwargs):
         except:
             section_phase_config = 'ABC'
         return {**out, 'SectionPhaseConfig':section_phase_config}
-    
+
     def get_spread_phases(raw, out, kwargs):
         detail = kwargs.pop('detail', None)
         phase_cells = kwargs.pop('phase_cells', ['F9', 'F10', 'F11'])
@@ -115,11 +114,11 @@ def find_endpoint(element, end_points):
         element['F51'] = parent.get('guid')
     return element
 
-def make_std_mpt(gdb, export='Export', elements=ELEMENTS):
+def make_std_mpt(gdb, elements, export='Export'):
     'Function to make and export std and mpt files'
     pools = ThreadPool(8)
     layers = pools.map(lambda x: make_layer(gdb=x[0], layer=x[1], **x[2]),
-                  ((GDB, layer, initialize(GDB, **kwargs)) for layer, kwargs in ELEMENTS.items()))
+                       ((gdb, layer, initialize(gdb, **kwargs)) for layer, kwargs in elements.items()))
 
     end_points = defaultdict(list)
 
