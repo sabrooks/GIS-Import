@@ -17,7 +17,7 @@ def make_structure(support):
     out['SRIPOLEID'] = str(properties['GlobalID'])
     return out
 
-def make_asm(gdb='GDB/Export_Feb01.gdb', export='ASM'):
+def make_asm(gdb, export='ASM'):
     "From the GDB, read the layer, make the ASM FILE"
     asm = [[POLENAME(element), POLEASS(element), 1, None, None, None, None, None]
            for element in fiona.open(gdb, layer='SupportStructure')]
